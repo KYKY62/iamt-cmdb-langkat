@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\SocToolController;
 use App\Http\Controllers\Api\UpsDeviceController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VirtualMachineController;
+use App\Http\Controllers\ApiKeyController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -43,6 +44,7 @@ Route::middleware('auth.api_token')->group(function () {
     Route::get('/compliance', [CmdbController::class, 'compliance']);
     Route::get('/audit-log', [CmdbController::class, 'auditLog']);
     Route::get('/asset-change-logs', AssetChangeLogController::class);
+    Route::get('/api-keys', [ApiKeyController::class, 'index']);
 
     Route::apiResource('/servers', ServerController::class)->only(['index', 'show']);
     Route::apiResource('/vms', VirtualMachineController::class)->only(['index', 'show']);
@@ -69,6 +71,8 @@ Route::middleware('auth.api_token')->group(function () {
     Route::apiResource('/users', UserController::class)->parameters(['users' => 'user'])->only(['index', 'show']);
 
     Route::middleware('role.full')->group(function () {
+        Route::post('/api-keys', [ApiKeyController::class, 'store']);
+        Route::delete('/api-keys/{apiKey}', [ApiKeyController::class, 'destroy']);
         Route::apiResource('/servers', ServerController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('/vms', VirtualMachineController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('/applications', ApplicationController::class)->only(['store', 'update', 'destroy']);

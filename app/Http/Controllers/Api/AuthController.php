@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ApiKey;
 use App\Models\Pengguna;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -26,11 +27,19 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = Str::random(64);
-        $user->forceFill([
-            'api_token_hash' => hash('sha256', $token),
-            'last_login_at' => now(),
-        ])->save();
+        // Token sesi pun disimpan di tabel api_keys supaya semua autentikasi
+        // melewati satu mekanisme. Prefix session_ membuatnya tidak muncul
+        // pada daftar API key permanen pengguna.
+        $token = 'iamt_session_'.Str::random(64);
+        ApiKey::where('user_id', $user->id)
+            ->where('key_prefix', 'like', 'session_%')
+            ->delete();
+        ApiKey::create([
+            'user_id' => $user->id,
+            'key_prefix' => 'session_',
+            'key_hash' => hash('sha256', $token),
+        ]);
+        $user->forceFill(['last_login_at' => now()])->save();
 
         return [
             'token' => $token,
@@ -45,7 +54,11 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->attributes->get('auth_user')?->forceFill(['api_token_hash' => null])->save();
+        $apiKey = $request->attributes->get('auth_api_key');
+
+        if ($apiKey && str_starts_with($apiKey->key_prefix, 'session_')) {
+            $apiKey->delete();
+        }
 
         return response()->noContent();
     }

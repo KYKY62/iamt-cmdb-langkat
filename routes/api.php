@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VirtualMachineController;
 use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\AsetTikController;
+use App\Http\Controllers\DetailAsetTikController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -48,6 +49,7 @@ Route::middleware('auth.api_token')->group(function () {
     Route::get('/api-keys', [ApiKeyController::class, 'index']);
     Route::get('/aset-tik', [AsetTikController::class, 'index']);
     Route::get('/aset-tik/{opd}', [AsetTikController::class, 'show']);
+    Route::get('/aset-tik/{kdbidang}/{kdunit}/{nmaset5}', [DetailAsetTikController::class, 'index'])->where('nmaset5', '.*');
 
     Route::apiResource('/servers', ServerController::class)->only(['index', 'show']);
     Route::apiResource('/vms', VirtualMachineController::class)->only(['index', 'show']);

@@ -8,8 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Tabel sudah ada (misal hasil import detail_aset_tik.sql) -> lewati tanpa error.
+        // Tabel sudah ada (misal hasil import detail_aset_tik.sql):
+        // jangan error, cukup tambahkan kolom yang belum ada.
         if (Schema::hasTable('detail_aset_tik')) {
+            if (! Schema::hasColumn('detail_aset_tik', 'Tgl_Pembukuan')) {
+                Schema::table('detail_aset_tik', function (Blueprint $table) {
+                    $table->date('Tgl_Pembukuan')->nullable()->after('Kd_Unit');
+                });
+            }
+
             return;
         }
 
@@ -19,6 +26,7 @@ return new class extends Migration
             $table->string('Nm_Unit', 150);
             $table->unsignedSmallInteger('Kd_Bidang');
             $table->unsignedSmallInteger('Kd_Unit');
+            $table->date('Tgl_Pembukuan')->nullable();
             $table->string('Merk', 100)->nullable();
             $table->string('Type', 100)->nullable();
             $table->text('Keterangan')->nullable();

@@ -24,6 +24,7 @@ class DetailAsetTik extends Model
         'Nm_Unit',
         'Kd_Bidang',
         'Kd_Unit',
+        'Tgl_Pembukuan',
         'Merk',
         'Type',
         'Keterangan',
@@ -33,5 +34,6 @@ class DetailAsetTik extends Model
     protected $casts = [
         'Kd_Bidang' => 'integer',
         'Kd_Unit' => 'integer',
+        'Tgl_Pembukuan' => 'date:Y-m-d',
     ];
 }

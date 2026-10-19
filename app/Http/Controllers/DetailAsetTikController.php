@@ -13,6 +13,22 @@ class DetailAsetTikController extends Controller
     private const PER_PAGE = 20;
 
     /**
+     * Kolom yang ditampilkan di response (urutan tetap).
+     */
+    private const COLUMNS = [
+        'Code_ID',
+        'Nm_Aset5',
+        'Nm_Unit',
+        'Kd_Bidang',
+        'Kd_Unit',
+        'Tgl_Pembukuan',
+        'Merk',
+        'Type',
+        'Keterangan',
+        'lastKondisi',
+    ];
+
+    /**
      * GET /api/aset-tik/{kdbidang}/{kdunit}/{nmaset5}?page=1
      *
      * {kdbidang} -> kolom Kd_Bidang (sama dengan kd_unit1 di tabel aset_tik)
@@ -42,6 +58,7 @@ class DetailAsetTikController extends Controller
             }
 
             $paginator = DetailAsetTik::query()
+                ->select(self::COLUMNS)
                 ->where('Kd_Bidang', (int) $kdbidang)
                 ->where('Kd_Unit', (int) $kdunit)
                 ->where('Nm_Aset5', $nmaset5)

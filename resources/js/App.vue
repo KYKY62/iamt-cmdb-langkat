@@ -1137,6 +1137,50 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+// Buka file dokumen (PDF/gambar) di tab baru. File diambil lewat API
+// dengan token login, lalu ditampilkan sebagai blob URL.
+async function viewDocument(path, name = "Dokumen") {
+  const popup = window.open("", "_blank");
+  if (popup) {
+    popup.document.title = name;
+    popup.document.body.innerText = "Memuat dokumen...";
+  }
+
+  try {
+    const response = await fetch(`/api${path}`, {
+      headers: {
+        Accept: "*/*",
+        ...(authToken.value
+          ? { Authorization: `Bearer ${authToken.value}` }
+          : {}),
+      },
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      if (response.status === 401) clearAuth();
+      throw new Error(body.message || `Gagal membuka dokumen (${response.status})`);
+    }
+
+    const blobUrl = URL.createObjectURL(await response.blob());
+
+    if (popup) {
+      popup.location.href = blobUrl;
+    } else {
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.click();
+    }
+
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+  } catch (error) {
+    popup?.close();
+    showAlert("Gagal membuka dokumen", error.message);
+  }
+}
+
 function monitoringOfficersText(row) {
   return (row?.officers || []).filter(Boolean).join(", ") || "-";
 }
@@ -4823,6 +4867,17 @@ onUpdated(() => {
                     <div class="row-actions">
                       <button
                         class="icon-button"
+                        title="Lihat dokumen"
+                        @click="
+                          viewDocument(
+                            `/application-documents/${doc.id}/file`,
+                            doc.original_name || doc.nama,
+                          )
+                        "
+                      >
+                        <Eye :size="16" /></button
+                      ><button
+                        class="icon-button"
                         title="Cetak label dokumen"
                         @click="openLabel('application-documents', doc)"
                       >
@@ -4925,7 +4980,25 @@ onUpdated(() => {
                         .join(", ") || "-"
                     }}
                   </td>
-                  <td>{{ integration.documents?.length || 0 }}</td>
+                  <td>
+                    <span v-if="!integration.documents?.length">0</span>
+                    <button
+                      v-for="document in integration.documents || []"
+                      :key="document.id"
+                      class="doc-link-button"
+                      type="button"
+                      :title="`Lihat ${document.original_name}`"
+                      @click="
+                        viewDocument(
+                          `/app-integration-documents/${document.id}/file`,
+                          document.original_name,
+                        )
+                      "
+                    >
+                      <Eye :size="14" />
+                      {{ document.original_name }}
+                    </button>
+                  </td>
                   <td>
                     <div class="row-actions">
                       <button

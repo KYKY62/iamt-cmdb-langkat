@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\ServesStoredDocument;
 use App\Http\Controllers\Controller;
 use App\Models\AppIntegration;
 use App\Models\AppIntegrationDocument;
@@ -11,6 +12,8 @@ use Illuminate\Support\Str;
 
 class AppIntegrationController extends Controller
 {
+    use ServesStoredDocument;
+
     public function index()
     {
         return AppIntegration::with([
@@ -27,6 +30,19 @@ class AppIntegrationController extends Controller
     public function show(AppIntegration $appIntegration)
     {
         return $appIntegration->load($this->relations());
+    }
+
+    /**
+     * GET /api/app-integration-documents/{appIntegrationDocument}/file
+     * Menampilkan file dokumen interoperabilitas (PDF/gambar) secara inline di browser.
+     */
+    public function documentFile(AppIntegrationDocument $appIntegrationDocument)
+    {
+        return $this->serveStoredDocument(
+            $appIntegrationDocument->path,
+            $appIntegrationDocument->original_name,
+            $appIntegrationDocument->mime_type,
+        );
     }
 
     public function store(Request $request)
@@ -80,13 +96,18 @@ class AppIntegrationController extends Controller
     private function storeDocuments(AppIntegration $integration, Request $request): void
     {
         foreach ($request->file('documents', []) as $file) {
+            // Baca info file sebelum dipindah (file .tmp hilang setelah move()).
+            $originalName = $file->getClientOriginalName();
+            $mimeType = $file->getMimeType();
+            $size = $file->getSize();
+
             $path = $this->storeUpload($file, 'integration-documents');
             AppIntegrationDocument::create([
                 'integration_id' => $integration->id,
                 'path' => $path,
-                'original_name' => $file->getClientOriginalName(),
-                'mime_type' => $file->getMimeType(),
-                'size_bytes' => $file->getSize(),
+                'original_name' => $originalName,
+                'mime_type' => $mimeType,
+                'size_bytes' => $size,
             ]);
         }
     }

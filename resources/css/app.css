@@ -2335,3 +2335,27 @@ th {
   min-width: 240px;
   text-align: left;
 }
+
+/* Tombol lihat dokumen interoperabilitas */
+.doc-link-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+  margin: 2px 0;
+  padding: 4px 8px;
+  border: 1px solid var(--blue-100);
+  border-radius: 6px;
+  background: var(--blue-50);
+  color: var(--blue-700);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.doc-link-button:hover {
+  background: var(--blue-100);
+}

@@ -55,6 +55,8 @@ Route::middleware('auth.api_token')->group(function () {
     Route::apiResource('/vms', VirtualMachineController::class)->only(['index', 'show']);
     Route::apiResource('/applications', ApplicationController::class)->only(['index', 'show']);
     Route::apiResource('/application-documents', ApplicationDocumentController::class)->parameters(['application-documents' => 'applicationDocument'])->only(['index', 'show']);
+    Route::get('/application-documents/{applicationDocument}/file', [ApplicationDocumentController::class, 'file']);
+    Route::get('/app-integration-documents/{appIntegrationDocument}/file', [AppIntegrationController::class, 'documentFile']);
     Route::apiResource('/app-integrations', AppIntegrationController::class)->parameters(['app-integrations' => 'appIntegration'])->only(['index', 'show']);
     Route::apiResource('/app-database-docs', AppDatabaseDocController::class)->parameters(['app-database-docs' => 'appDatabaseDoc'])->only(['index', 'show']);
     Route::apiResource('/backup-media', BackupMediaController::class)->parameters(['backup-media' => 'backupMedia'])->only(['index', 'show']);

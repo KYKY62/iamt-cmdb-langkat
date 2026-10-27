@@ -2261,16 +2261,21 @@ function openEdit(module, row) {
     });
   }
   if (module === "network-installations") {
+    // "2026-10-27 14:30:00" -> "2026-10-27T14:30" (format input datetime-local).
+    // Data lama yang hanya berisi tanggal tetap terbaca (jam 00:00).
+    const toInstallationDateTimeInput = (value) => {
+      if (!value) return "";
+      const text = String(value).replace(" ", "T");
+      return text.length <= 10 ? `${text}T00:00` : text.slice(0, 16);
+    };
     Object.assign(networkInstallationForm, {
       site_id: row.site_id || "",
       device_id: row.device_id || "",
       replaced_by_device_id: row.replaced_by_device_id || "",
       role: row.role || "",
       status: row.status || "",
-      installed_at: row.installed_at
-        ? String(row.installed_at).slice(0, 10)
-        : "",
-      removed_at: row.removed_at ? String(row.removed_at).slice(0, 10) : "",
+      installed_at: toInstallationDateTimeInput(row.installed_at),
+      removed_at: toInstallationDateTimeInput(row.removed_at),
       installed_by: row.installed_by || "",
       notes: row.notes || "",
     });
@@ -5871,11 +5876,11 @@ onUpdated(() => {
                   <td>
                     {{
                       row.installed_at
-                        ? String(row.installed_at).slice(0, 10)
+                        ? String(row.installed_at).replace("T", " ").slice(0, 16)
                         : "-"
                     }}<span>{{
                       row.removed_at
-                        ? `s.d. ${String(row.removed_at).slice(0, 10)}`
+                        ? `s.d. ${String(row.removed_at).replace("T", " ").slice(0, 16)}`
                         : "masih tercatat"
                     }}</span>
                   </td>
@@ -8271,17 +8276,17 @@ onUpdated(() => {
             </div>
             <div class="three-col">
               <label class="field-label">
-                <span>Tanggal Pasang</span>
+                <span>Tanggal &amp; Jam Pasang</span>
                 <input
                   v-model="networkInstallationForm.installed_at"
-                  type="date"
+                  type="datetime-local"
                 />
               </label>
               <label class="field-label">
-                <span>Tanggal Lepas / Diganti</span>
+                <span>Tanggal &amp; Jam Lepas / Diganti</span>
                 <input
                   v-model="networkInstallationForm.removed_at"
-                  type="date"
+                  type="datetime-local"
                 />
               </label>
               <label class="field-label">

@@ -24,9 +24,11 @@ class ConsumerNetworkInstallation extends Model
         'notes',
     ];
 
+    // Tanggal + jam. Format tetap supaya API mengirim waktu lokal (Asia/Jakarta),
+    // contoh: "2026-10-27 14:30:00", bukan ISO UTC.
     protected $casts = [
-        'installed_at' => 'date',
-        'removed_at' => 'date',
+        'installed_at' => 'datetime:Y-m-d H:i:s',
+        'removed_at' => 'datetime:Y-m-d H:i:s',
     ];
 
     public function site(): BelongsTo

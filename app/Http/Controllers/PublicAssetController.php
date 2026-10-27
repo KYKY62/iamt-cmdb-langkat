@@ -230,8 +230,8 @@ class PublicAssetController extends Controller
             'network-installations' => [
                 'Perangkat' => $row->device?->nama ?? '-',
                 'Site / Node' => $row->site?->nama ?: ($row->opd?->nama ? 'Semua Site/Node - '.$row->opd->nama : 'Semua Site/Node'),
-                'Tanggal Pasang' => optional($row->installed_at)->format('Y-m-d') ?? '-',
-                'Tanggal Lepas' => optional($row->removed_at)->format('Y-m-d') ?? '-',
+                'Tanggal Pasang' => optional($row->installed_at)->format('Y-m-d H:i') ?? '-',
+                'Tanggal Lepas' => optional($row->removed_at)->format('Y-m-d H:i') ?? '-',
                 'Perangkat Pengganti' => $row->replacementDevice?->nama ?? '-',
                 'Catatan' => $row->notes ?? '-',
             ],

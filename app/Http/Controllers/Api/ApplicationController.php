@@ -16,6 +16,13 @@ class ApplicationController extends Controller
             ->get();
     }
 
+    public function statsBeranda()
+    {
+        return Aplikasi::with(['opd:id,nama'])
+            ->orderBy('nama')
+            ->get();
+    }
+
     public function show(Aplikasi $application)
     {
         return $application->load($this->relations());
@@ -122,4 +129,3 @@ class ApplicationController extends Controller
         ]);
     }
 }
-

@@ -53,6 +53,7 @@ Route::middleware('auth.api_token')->group(function () {
 
     Route::apiResource('/servers', ServerController::class)->only(['index', 'show']);
     Route::apiResource('/vms', VirtualMachineController::class)->only(['index', 'show']);
+    Route::get('/applications/stats', [ApplicationController::class, 'statsBeranda']);
     Route::apiResource('/applications', ApplicationController::class)->only(['index', 'show']);
     Route::apiResource('/application-documents', ApplicationDocumentController::class)->parameters(['application-documents' => 'applicationDocument'])->only(['index', 'show']);
     Route::get('/application-documents/{applicationDocument}/file', [ApplicationDocumentController::class, 'file']);
@@ -65,6 +66,8 @@ Route::middleware('auth.api_token')->group(function () {
     Route::apiResource('/soc-tools', SocToolController::class)->parameters(['soc-tools' => 'socTool'])->only(['index', 'show']);
     Route::apiResource('/network-sites', ConsumerNetworkSiteController::class)->parameters(['network-sites' => 'networkSite'])->only(['index', 'show']);
     Route::apiResource('/network-devices', ConsumerNetworkDeviceController::class)->parameters(['network-devices' => 'networkDevice'])->only(['index', 'show']);
+    // Harus sebelum apiResource, supaya "stats" tidak dianggap {networkInstallation}.
+    Route::get('/network-installations/stats', [ConsumerNetworkInstallationController::class, 'stats']);
     Route::apiResource('/network-installations', ConsumerNetworkInstallationController::class)->parameters(['network-installations' => 'networkInstallation'])->only(['index', 'show']);
     Route::apiResource('/network-ip-configs', ConsumerNetworkIpConfigController::class)->parameters(['network-ip-configs' => 'networkIpConfig'])->only(['index', 'show']);
     Route::apiResource('/network-credentials', ConsumerNetworkCredentialController::class)->parameters(['network-credentials' => 'networkCredential'])->only(['index', 'show']);

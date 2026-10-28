@@ -18,6 +18,7 @@ class ConsumerNetworkInstallation extends Model
         'replaced_by_device_id',
         'role',
         'status',
+        'reported_at',
         'installed_at',
         'removed_at',
         'installed_by',
@@ -27,6 +28,7 @@ class ConsumerNetworkInstallation extends Model
     // Tanggal + jam. Format tetap supaya API mengirim waktu lokal (Asia/Jakarta),
     // contoh: "2026-10-27 14:30:00", bukan ISO UTC.
     protected $casts = [
+        'reported_at' => 'datetime:Y-m-d H:i:s',
         'installed_at' => 'datetime:Y-m-d H:i:s',
         'removed_at' => 'datetime:Y-m-d H:i:s',
     ];

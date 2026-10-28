@@ -436,6 +436,7 @@ const networkInstallationForm = reactive({
   replaced_by_device_id: "",
   role: "",
   status: "",
+  reported_at: "",
   installed_at: "",
   removed_at: "",
   installed_by: "",
@@ -1135,6 +1136,86 @@ function formatFileSize(bytes) {
   if (!bytes) return "-";
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// ===== Khusus tabel Instalasi & Pergantian (network-installations) =====
+// Nilai dari API: "2026-10-27 14:30:00" (waktu lokal). Diurai manual supaya
+// tidak bergeser zona waktu. Jam 00:00 dianggap "tanpa jam" (data lama).
+const INSTALLATION_MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+  "Jul", "Agu", "Sep", "Okt", "Nov", "Des",
+];
+
+function parseInstallationDate(value) {
+  const match = String(value || "").match(
+    /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/,
+  );
+  if (!match) return null;
+  const [, y, m, d, h = "00", min = "00"] = match;
+  return {
+    date: new Date(+y, +m - 1, +d, +h, +min),
+    hasTime: !(h === "00" && min === "00"),
+  };
+}
+
+function installationDateLabel(value) {
+  const parsed = parseInstallationDate(value);
+  if (!parsed) return "-";
+  const { date, hasTime } = parsed;
+  const text = `${date.getDate()} ${INSTALLATION_MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+  if (!hasTime) return text;
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${text}, ${hh}:${mm}`;
+}
+
+function addInstallationMonths(date, count) {
+  const result = new Date(
+    date.getFullYear(),
+    date.getMonth() + count,
+    1,
+    date.getHours(),
+    date.getMinutes(),
+  );
+  const lastDay = new Date(
+    result.getFullYear(),
+    result.getMonth() + 1,
+    0,
+  ).getDate();
+  result.setDate(Math.min(date.getDate(), lastDay));
+  return result;
+}
+
+// Durasi antara dua waktu, contoh: "4 bulan 1 hari", "5 jam 30 menit".
+// end kosong = sampai sekarang.
+function installationDuration(startValue, endValue = null) {
+  const start = parseInstallationDate(startValue);
+  if (!start) return "";
+  const end = endValue
+    ? parseInstallationDate(endValue)
+    : { date: new Date(), hasTime: true };
+  if (!end || end.date < start.date) return "";
+
+  const dateOnly = !start.hasTime || !end.hasTime;
+  let months = 0;
+  while (addInstallationMonths(start.date, months + 1) <= end.date) months++;
+
+  const rest = end.date - addInstallationMonths(start.date, months);
+  const days = Math.floor(rest / 86400000);
+  const hours = Math.floor((rest % 86400000) / 3600000);
+  const minutes = Math.floor((rest % 3600000) / 60000);
+
+  const parts = [];
+  if (months >= 12) parts.push(`${Math.floor(months / 12)} tahun`);
+  if (months % 12) parts.push(`${months % 12} bulan`);
+  if (days) parts.push(`${days} hari`);
+  if (!dateOnly && months === 0) {
+    if (hours) parts.push(`${hours} jam`);
+    if (minutes && days === 0) parts.push(`${minutes} menit`);
+  }
+
+  if (parts.length) return parts.join(" ");
+  return dateOnly ? "di hari yang sama" : "kurang dari 1 menit";
 }
 
 // Buka file dokumen (PDF/gambar) di tab baru. File diambil lewat API
@@ -1955,6 +2036,7 @@ function resetModuleForm(module) {
       replaced_by_device_id: "",
       role: "",
       status: "",
+      reported_at: "",
       installed_at: "",
       removed_at: "",
       installed_by: "",
@@ -2274,6 +2356,7 @@ function openEdit(module, row) {
       replaced_by_device_id: row.replaced_by_device_id || "",
       role: row.role || "",
       status: row.status || "",
+      reported_at: toInstallationDateTimeInput(row.reported_at),
       installed_at: toInstallationDateTimeInput(row.installed_at),
       removed_at: toInstallationDateTimeInput(row.removed_at),
       installed_by: row.installed_by || "",
@@ -5840,7 +5923,7 @@ onUpdated(() => {
                   <th>Site / Node</th>
                   <th>Perangkat</th>
                   <th>Role</th>
-                  <th>Periode</th>
+                  <th>Masa Pakai</th>
                   <th>Pengganti</th>
                   <th>Status</th>
                   <th>Aksi</th>
@@ -5874,15 +5957,49 @@ onUpdated(() => {
                     }}<span>{{ row.installed_by || "" }}</span>
                   </td>
                   <td>
-                    {{
-                      row.installed_at
-                        ? String(row.installed_at).replace("T", " ").slice(0, 16)
-                        : "-"
-                    }}<span>{{
-                      row.removed_at
-                        ? `s.d. ${String(row.removed_at).replace("T", " ").slice(0, 16)}`
-                        : "masih tercatat"
-                    }}</span>
+                    <div class="install-period">
+                      <div v-if="row.reported_at" class="install-period-row">
+                        <small>Laporan</small>
+                        <b>{{ installationDateLabel(row.reported_at) }}</b>
+                      </div>
+                      <div class="install-period-row">
+                        <small>Dipasang</small>
+                        <b>{{ installationDateLabel(row.installed_at) }}</b>
+                      </div>
+                      <div v-if="row.removed_at" class="install-period-row">
+                        <small>Dilepas</small>
+                        <b>{{ installationDateLabel(row.removed_at) }}</b>
+                      </div>
+                      <div
+                        v-if="
+                          row.reported_at &&
+                          installationDuration(row.reported_at, row.installed_at)
+                        "
+                        class="install-period-note is-response"
+                      >
+                        Ditangani dalam
+                        {{ installationDuration(row.reported_at, row.installed_at) }}
+                      </div>
+                      <div
+                        v-if="row.removed_at"
+                        class="install-period-note"
+                      >
+                        Terpakai
+                        {{
+                          installationDuration(row.installed_at, row.removed_at) ||
+                          "-"
+                        }}
+                      </div>
+                      <div
+                        v-else-if="row.installed_at"
+                        class="install-period-note is-active"
+                      >
+                        Masih terpasang
+                        <template v-if="installationDuration(row.installed_at)">
+                          ({{ installationDuration(row.installed_at) }})
+                        </template>
+                      </div>
+                    </div>
                   </td>
                   <td>{{ row.replacement_device?.nama || "-" }}</td>
                   <td>
@@ -8276,6 +8393,17 @@ onUpdated(() => {
             </div>
             <div class="three-col">
               <label class="field-label">
+                <span>Waktu Laporan Masuk</span>
+                <input
+                  v-model="networkInstallationForm.reported_at"
+                  type="datetime-local"
+                  :max="networkInstallationForm.installed_at || undefined"
+                />
+                <small class="install-field-hint">
+                  Kosongkan jika pemasangan rutin (bukan dari laporan).
+                </small>
+              </label>
+              <label class="field-label">
                 <span>Tanggal &amp; Jam Pasang</span>
                 <input
                   v-model="networkInstallationForm.installed_at"
@@ -8289,14 +8417,14 @@ onUpdated(() => {
                   type="datetime-local"
                 />
               </label>
-              <label class="field-label">
-                <span>Dipasang / Dicatat Oleh</span>
-                <input
-                  v-model="networkInstallationForm.installed_by"
-                  placeholder="Nama petugas"
-                />
-              </label>
             </div>
+            <label class="field-label">
+              <span>Dipasang / Dicatat Oleh</span>
+              <input
+                v-model="networkInstallationForm.installed_by"
+                placeholder="Nama petugas"
+              />
+            </label>
             <textarea
               v-model="networkInstallationForm.notes"
               placeholder="Catatan pemasangan, pergantian, atau pelepasan perangkat"

@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\IpAddressController;
 use App\Http\Controllers\Api\IspController;
 use App\Http\Controllers\Api\RackController;
 use App\Http\Controllers\Api\ReferenceController;
+use App\Http\Controllers\Api\SdmController;
 use App\Http\Controllers\Api\ServerController;
 use App\Http\Controllers\Api\SocToolController;
 use App\Http\Controllers\Api\UpsDeviceController;
@@ -79,11 +80,16 @@ Route::middleware('auth.api_token')->group(function () {
     Route::apiResource('/isps', IspController::class)->only(['index', 'show']);
     Route::apiResource('/ip-addresses', IpAddressController::class)->parameters(['ip-addresses' => 'ipAddress'])->only(['index', 'show']);
     Route::apiResource('/users', UserController::class)->parameters(['users' => 'user'])->only(['index', 'show']);
+    // SDM (semua role boleh lihat). Route file ditulis sebelum apiResource.
+    Route::get('/sdm/{sdm}/sertifikasi/{sertifikasi}', [SdmController::class, 'sertifikasi']);
+    Route::apiResource('/sdm', SdmController::class)->only(['index', 'show']);
 
-    // full + operator: tambah / ubah / hapus aplikasi.
+    // full + operator: tambah / ubah / hapus aplikasi, server, dan SDM.
     Route::middleware('role:full,operator')->group(function () {
         Route::apiResource('/applications', ApplicationController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('/servers', ServerController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('/sdm', SdmController::class)->only(['store', 'update', 'destroy']);
+        Route::delete('/sdm/{sdm}/sertifikasi/{sertifikasi}', [SdmController::class, 'destroySertifikasi']);
     });
 
     // full saja: semua POST / PUT / DELETE lainnya.

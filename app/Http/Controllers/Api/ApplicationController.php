@@ -6,12 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Aplikasi;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class ApplicationController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Aplikasi::with(['opd:id,nama', 'vms:id,nama,status', 'servers:id,nama,status', 'ipAddresses:id,ip,jenis', 'dataAssets:id,aplikasi_id,classification_id,name,type', 'documents:id,aplikasi_id,document_category'])
+        // Operator: hanya aplikasi milik OPD-nya. Full & read_only: semua.
+        $query = Aplikasi::with(['opd:id,nama', 'vms:id,nama,status', 'servers:id,nama,status', 'ipAddresses:id,ip,jenis', 'dataAssets:id,aplikasi_id,classification_id,name,type', 'documents:id,aplikasi_id,document_category']);
+
+        return $this->authUser($request)
+            ->limitToOwnOpd($query)
             ->orderBy('nama')
             ->get();
     }
@@ -23,14 +28,16 @@ class ApplicationController extends Controller
             ->get();
     }
 
-    public function show(Aplikasi $application)
+    public function show(Request $request, Aplikasi $application)
     {
+        $this->ensureCanAccess($request, $application);
+
         return $application->load($this->relations());
     }
 
     public function store(Request $request)
     {
-        $data = $this->modelData($this->validated($request));
+        $data = $this->applyOwnOpd($request, $this->modelData($this->validated($request)));
         $app = Aplikasi::create($data);
         $this->syncRelations($app, $request);
         $this->audit('create', $app, null, $app->fresh($this->relations())->toArray(), $request);
@@ -40,8 +47,10 @@ class ApplicationController extends Controller
 
     public function update(Request $request, Aplikasi $application)
     {
+        $this->ensureCanAccess($request, $application);
+
         $before = $application->load($this->relations())->toArray();
-        $application->update($this->modelData($this->validated($request)));
+        $application->update($this->applyOwnOpd($request, $this->modelData($this->validated($request))));
         $this->syncRelations($application, $request);
         $this->audit('update', $application, $before, $application->fresh($this->relations())->toArray(), $request);
 
@@ -50,6 +59,8 @@ class ApplicationController extends Controller
 
     public function destroy(Request $request, Aplikasi $application)
     {
+        $this->ensureCanAccess($request, $application);
+
         $before = $application->toArray();
         $application->delete();
         $this->audit('delete', $application, $before, null, $request);
@@ -86,6 +97,41 @@ class ApplicationController extends Controller
             'ip_ids' => ['array'],
             'ip_ids.*' => ['uuid', 'exists:ip_address,id'],
         ]);
+    }
+
+    private function authUser(Request $request)
+    {
+        return $request->attributes->get('auth_user');
+    }
+
+    /**
+     * Operator yang membuka aplikasi OPD lain mendapat 404.
+     */
+    private function ensureCanAccess(Request $request, Aplikasi $application): void
+    {
+        abort_unless($this->authUser($request)->canAccessOpd($application->opd_id), 404);
+    }
+
+    /**
+     * Untuk operator, OPD aplikasi selalu dipaksa ke OPD akunnya sendiri.
+     */
+    private function applyOwnOpd(Request $request, array $data): array
+    {
+        $user = $this->authUser($request);
+
+        if (! $user->restrictedToOwnOpd()) {
+            return $data;
+        }
+
+        if (blank($user->opd_id)) {
+            throw ValidationException::withMessages([
+                'opd_id' => ['Akun operator belum terhubung ke OPD. Hubungi admin.'],
+            ]);
+        }
+
+        $data['opd_id'] = $user->opd_id;
+
+        return $data;
     }
 
     private function syncRelations(Aplikasi $app, Request $request): void

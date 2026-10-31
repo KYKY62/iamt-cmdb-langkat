@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\UsesUuid;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -41,9 +42,42 @@ class Pengguna extends Model
      */
     public const WRITABLE_MODULES = [
         'full' => ['*'],
-        'operator' => ['applications', 'servers'],
+        'operator' => ['applications', 'servers', 'sdm'],
         'read_only' => [],
     ];
+
+    /**
+     * Operator hanya boleh melihat/mengubah data milik OPD-nya sendiri.
+     * Role full dan read_only melihat semua data.
+     */
+    public function restrictedToOwnOpd(): bool
+    {
+        return $this->role === 'operator';
+    }
+
+    /**
+     * Batasi query ke OPD milik user (untuk operator).
+     * Operator tanpa OPD tidak melihat data apa pun.
+     */
+    public function limitToOwnOpd(Builder $query, string $column = 'opd_id'): Builder
+    {
+        if (! $this->restrictedToOwnOpd()) {
+            return $query;
+        }
+
+        return $this->opd_id
+            ? $query->where($column, $this->opd_id)
+            : $query->whereRaw('1 = 0');
+    }
+
+    public function canAccessOpd(?string $opdId): bool
+    {
+        if (! $this->restrictedToOwnOpd()) {
+            return true;
+        }
+
+        return filled($this->opd_id) && $opdId === $this->opd_id;
+    }
 
     public function writableModules(): array
     {

@@ -2417,3 +2417,42 @@ th {
   background: var(--yellow-100);
   color: #92400e;
 }
+
+/* Daftar sertifikasi di form SDM */
+.sdm-cert-list {
+  display: grid;
+  gap: 6px;
+}
+
+.sdm-cert-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--slate-200);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sdm-cert-item.is-new {
+  border-style: dashed;
+  background: var(--blue-50);
+}
+
+.sdm-cert-item.is-removed .sdm-cert-name {
+  color: var(--slate-600);
+  text-decoration: line-through;
+}
+
+.sdm-cert-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sdm-cert-item .doc-link-button {
+  flex-shrink: 0;
+}

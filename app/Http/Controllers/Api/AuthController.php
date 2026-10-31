@@ -85,6 +85,8 @@ class AuthController extends Controller
             'status' => $user->status,
             'can_write' => $user->canWrite(),
             'writable_modules' => $user->writableModules(),
+            'opd_id' => $user->opd_id,
+            'opd_nama' => $user->opd?->nama,
         ];
     }
 }

@@ -16,4 +16,4 @@
 /storage/framework/views/*
 /storage/logs/*
 !.gitignore
-/public/.hot
+/public/hot

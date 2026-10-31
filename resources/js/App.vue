@@ -238,6 +238,37 @@ function roleLabel(role, short = false) {
   return "Read Only";
 }
 
+// Menu yang tampil untuk role operator. Role lain melihat semua menu.
+const OPERATOR_MENU_IDS = ["applications", "servers"];
+
+const visibleMenuSections = computed(() => {
+  if (currentUser.value?.role !== "operator") return menuSections;
+  return menuSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => OPERATOR_MENU_IDS.includes(item.id)),
+    }))
+    .filter((section) => section.items.length);
+});
+
+const visibleMenuIds = computed(() =>
+  visibleMenuSections.value.flatMap((section) =>
+    section.items.map((item) => item.id),
+  ),
+);
+
+// Kalau tab aktif tidak ada di menu yang boleh dilihat (misal operator
+// baru login dan tab default "dashboard"), pindah ke menu pertama yang boleh.
+watch(
+  [visibleMenuIds, () => activeTab.value],
+  ([ids]) => {
+    if (ids.length && !ids.includes(activeTab.value)) {
+      activeTab.value = ids[0];
+    }
+  },
+  { immediate: true },
+);
+
 const labelSizeOptions = [
   { value: "50x30", label: "50 x 30 mm", width: 50, height: 30 },
   { value: "60x40", label: "60 x 40 mm", width: 60, height: 40 },
@@ -807,7 +838,7 @@ function syncTableCardLabels() {
 }
 
 function selectMenu(item) {
-  if (item.disabled) return;
+  if (item.disabled || !visibleMenuIds.value.includes(item.id)) return;
   activeTab.value = item.id;
   mobileNavOpen.value = false;
 }
@@ -3325,7 +3356,7 @@ onUpdated(() => {
 
       <nav class="nav-list">
         <section
-          v-for="(section, index) in menuSections"
+          v-for="(section, index) in visibleMenuSections"
           :key="section.label || index"
           class="nav-section"
         >

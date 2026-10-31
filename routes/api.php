@@ -28,7 +28,6 @@ use App\Http\Controllers\Api\SocToolController;
 use App\Http\Controllers\Api\UpsDeviceController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VirtualMachineController;
-use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\AsetTikController;
 use App\Http\Controllers\DetailAsetTikController;
 use Illuminate\Support\Facades\Route;
@@ -46,7 +45,6 @@ Route::middleware('auth.api_token')->group(function () {
     Route::get('/compliance', [CmdbController::class, 'compliance']);
     Route::get('/audit-log', [CmdbController::class, 'auditLog']);
     Route::get('/asset-change-logs', AssetChangeLogController::class);
-    Route::get('/api-keys', [ApiKeyController::class, 'index']);
     Route::get('/aset-tik', [AsetTikController::class, 'index']);
     Route::get('/aset-tik/{opd}', [AsetTikController::class, 'show']);
     Route::get('/aset-tik/{kdbidang}/{kdunit}/{nmaset5}', [DetailAsetTikController::class, 'index'])->where('nmaset5', '.*');
@@ -87,8 +85,6 @@ Route::middleware('auth.api_token')->group(function () {
 
     // full saja: semua POST / PUT / DELETE lainnya.
     Route::middleware('role.full')->group(function () {
-        Route::post('/api-keys', [ApiKeyController::class, 'store']);
-        Route::delete('/api-keys/{apiKey}', [ApiKeyController::class, 'destroy']);
         Route::apiResource('/servers', ServerController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('/vms', VirtualMachineController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('/application-documents', ApplicationDocumentController::class)->parameters(['application-documents' => 'applicationDocument'])->only(['store', 'update', 'destroy']);

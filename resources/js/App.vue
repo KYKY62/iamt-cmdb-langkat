@@ -12,7 +12,6 @@ import {
   FileCheck2,
   GitBranch,
   HardDrive,
-  Key,
   LayoutDashboard,
   Menu,
   Network,
@@ -101,7 +100,6 @@ const menuSections = [
       { id: "map", label: "Mapping", icon: GitBranch },
       { id: "compliance", label: "Compliance", icon: FileCheck2 },
       { id: "audit", label: "Audit", icon: Activity },
-      { id: "api-keys", label: "API Keys", icon: Key },
     ],
   },
 ];
@@ -217,7 +215,6 @@ const networkIpConfigs = ref([]);
 const networkCredentials = ref([]);
 const networkMonitorings = ref([]);
 const users = ref([]);
-const apiKeys = ref([]);
 const dependencyMap = ref([]);
 const compliance = ref(null);
 const auditLog = ref([]);
@@ -841,7 +838,6 @@ async function loadAll() {
       networkCredentialRows,
       networkMonitoringRows,
       userRows,
-      apiKeyRows,
       mapRows,
       complianceRows,
       auditRows,
@@ -871,7 +867,6 @@ async function loadAll() {
       api("/network-credentials"),
       api("/network-monitorings"),
       api("/users"),
-      api("/api-keys"),
       api("/dependency-map"),
       api("/compliance"),
       api("/audit-log"),
@@ -902,7 +897,6 @@ async function loadAll() {
     networkCredentials.value = networkCredentialRows;
     networkMonitorings.value = networkMonitoringRows;
     users.value = userRows;
-    apiKeys.value = apiKeyRows;
     dependencyMap.value = mapRows;
     compliance.value = complianceRows;
     auditLog.value = auditRows;
@@ -945,7 +939,6 @@ const moduleLabels = {
   "network-monitorings": "Monitoring Site",
   "network-owner-summary": "Relasi OPD Consumer Networking",
   users: "Pengguna & Role",
-  "api-keys": "API Key",
 };
 
 const bulkLabelModuleOptions = [
@@ -2838,28 +2831,6 @@ async function removeRow(kind, id) {
   });
 }
 
-async function createApiKey() {
-  if (!canWrite.value || saving.value) return;
-
-  saving.value = true;
-  error.value = "";
-  try {
-    const response = await api("/api-keys", {
-      method: "POST",
-      body: JSON.stringify({}),
-    });
-    await loadAll();
-    showAlert(
-      "API key baru",
-      `Salin dan simpan API key ini sekarang. Demi keamanan, key ini tidak dapat ditampilkan lagi: ${response.api_key}`,
-    );
-  } catch (err) {
-    error.value = err.message;
-  } finally {
-    saving.value = false;
-  }
-}
-
 function closeDeleteModal() {
   if (deleting.value) return;
   Object.assign(deleteModal, { open: false, kind: "", id: null, label: "" });
@@ -3142,13 +3113,6 @@ const filteredNetworkMonitorings = computed(() => {
 const filteredUsers = computed(() => {
   const needle = query.value.toLowerCase();
   return users.value.filter((row) =>
-    JSON.stringify(row).toLowerCase().includes(needle),
-  );
-});
-
-const filteredApiKeys = computed(() => {
-  const needle = query.value.toLowerCase();
-  return apiKeys.value.filter((row) =>
     JSON.stringify(row).toLowerCase().includes(needle),
   );
 });
@@ -6945,56 +6909,6 @@ onUpdated(() => {
                 >
               </div>
             </article>
-          </div>
-        </section>
-      </section>
-
-      <section v-if="activeTab === 'api-keys'" class="content-grid">
-        <section class="surface wide">
-          <div class="module-header">
-            <div>
-              <p class="eyebrow">API Keys</p>
-              <h3 class="yellow-title">Buat API Key</h3>
-            </div>
-            <button
-              v-if="canWrite"
-              class="action-button"
-              type="button"
-              :disabled="saving"
-              @click="createApiKey"
-            >
-              <Plus :size="17" /> Tambah API Key
-            </button>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>No</th>
-                  <th>API KEY</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(apiKey, index) in filteredApiKeys" :key="apiKey.id">
-                  <td>{{ index + 1 }}</td>
-                  <td>
-                    <strong>{{ apiKey.api_key_masked }}</strong>
-                  </td>
-                  <td>
-                    <div v-if="canWrite" class="row-actions">
-                      <button
-                        class="icon-button danger"
-                        title="Hapus Token"
-                        @click="removeRow('api-keys', apiKey.id)"
-                      >
-                        <Trash2 :size="16" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
           </div>
         </section>
       </section>

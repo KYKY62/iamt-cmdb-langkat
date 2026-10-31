@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth.api_token' => \App\Http\Middleware\AuthenticateApiToken::class,
             'role.full' => \App\Http\Middleware\EnsureFullAccess::class,
+            'role' => \App\Http\Middleware\EnsureRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

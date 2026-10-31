@@ -80,12 +80,17 @@ Route::middleware('auth.api_token')->group(function () {
     Route::apiResource('/ip-addresses', IpAddressController::class)->parameters(['ip-addresses' => 'ipAddress'])->only(['index', 'show']);
     Route::apiResource('/users', UserController::class)->parameters(['users' => 'user'])->only(['index', 'show']);
 
+    // full + operator: tambah / ubah / hapus aplikasi.
+    Route::middleware('role:full,operator')->group(function () {
+        Route::apiResource('/applications', ApplicationController::class)->only(['store', 'update', 'destroy']);
+    });
+
+    // full saja: semua POST / PUT / DELETE lainnya.
     Route::middleware('role.full')->group(function () {
         Route::post('/api-keys', [ApiKeyController::class, 'store']);
         Route::delete('/api-keys/{apiKey}', [ApiKeyController::class, 'destroy']);
         Route::apiResource('/servers', ServerController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('/vms', VirtualMachineController::class)->only(['store', 'update', 'destroy']);
-        Route::apiResource('/applications', ApplicationController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('/application-documents', ApplicationDocumentController::class)->parameters(['application-documents' => 'applicationDocument'])->only(['store', 'update', 'destroy']);
         Route::apiResource('/app-integrations', AppIntegrationController::class)->parameters(['app-integrations' => 'appIntegration'])->only(['store', 'update', 'destroy']);
         Route::apiResource('/app-database-docs', AppDatabaseDocController::class)->parameters(['app-database-docs' => 'appDatabaseDoc'])->only(['store', 'update', 'destroy']);

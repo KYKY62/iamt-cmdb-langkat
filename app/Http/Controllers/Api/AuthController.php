@@ -55,12 +55,24 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $apiKey = $request->attributes->get('auth_api_key');
+        $isSessionToken = $apiKey && str_starts_with($apiKey->key_prefix, 'session_');
 
-        if ($apiKey && str_starts_with($apiKey->key_prefix, 'session_')) {
+        if ($isSessionToken) {
             $apiKey->delete();
         }
 
-        return response()->noContent();
+        return response()->json([
+            'status' => 'success',
+            'code' => 200,
+            'message' => $isSessionToken
+                ? 'Logout berhasil. Token sudah tidak berlaku.'
+                : 'Logout berhasil. API key permanen tetap aktif; hapus lewat menu API Keys bila ingin mencabutnya.',
+            'data' => [
+                'token_type' => $isSessionToken ? 'session' : 'api_key',
+                'token_revoked' => $isSessionToken,
+                'logged_out_at' => now()->format('Y-m-d H:i:s'),
+            ],
+        ], 200);
     }
 
     private function userPayload(Pengguna $user): array
@@ -72,6 +84,7 @@ class AuthController extends Controller
             'role' => $user->role,
             'status' => $user->status,
             'can_write' => $user->canWrite(),
+            'writable_modules' => $user->writableModules(),
         ];
     }
 }

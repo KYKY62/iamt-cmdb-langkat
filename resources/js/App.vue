@@ -225,6 +225,18 @@ const assetChangeLogs = ref([]);
 const impact = ref(null);
 
 const canWrite = computed(() => Boolean(currentUser.value?.can_write));
+// Boleh tambah/ubah/hapus di modul tertentu. Role full = semua modul,
+// operator = modul di writable_modules (saat ini hanya "applications").
+function canWriteModule(module) {
+  if (canWrite.value) return true;
+  const modules = currentUser.value?.writable_modules || [];
+  return modules.includes("*") || (Boolean(module) && modules.includes(module));
+}
+function roleLabel(role, short = false) {
+  if (role === "full") return short ? "Full" : "Full Access";
+  if (role === "operator") return "Operator";
+  return "Read Only";
+}
 
 const labelSizeOptions = [
   { value: "50x30", label: "50 x 30 mm", width: 50, height: 30 },
@@ -2135,13 +2147,13 @@ function formFor(module) {
 }
 
 function openCreate(module) {
-  if (!canWrite.value) return;
+  if (!canWriteModule(module)) return;
   resetModuleForm(module);
   Object.assign(modal, { open: true, module, mode: "create", id: null });
 }
 
 function openEdit(module, row) {
-  if (!canWrite.value) return;
+  if (!canWriteModule(module)) return;
   resetModuleForm(module);
   if (module === "data-centers") {
     Object.assign(dataCenterForm, {
@@ -2462,7 +2474,7 @@ function openEdit(module, row) {
 }
 
 function openCopy(module, row) {
-  if (!canWrite.value) return;
+  if (!canWriteModule(module)) return;
   openEdit(module, row);
 
   if (module === "ip-addresses") ipAddressForm.ip = "";
@@ -2486,7 +2498,7 @@ function closeAlert() {
 
 async function saveModal() {
   if (saving.value) return;
-  if (!canWrite.value) {
+  if (!canWriteModule(modal.module)) {
     error.value = "Akses read only tidak dapat mengubah data.";
     return;
   }
@@ -2813,7 +2825,7 @@ async function createApplication() {
 }
 
 async function removeRow(kind, id) {
-  if (!canWrite.value) {
+  if (!canWriteModule(kind)) {
     error.value = "Akses read only tidak dapat menghapus data.";
     return;
   }
@@ -2854,7 +2866,12 @@ function closeDeleteModal() {
 }
 
 async function confirmDelete() {
-  if (!canWrite.value || deleting.value || !deleteModal.kind || !deleteModal.id)
+  if (
+    !canWriteModule(deleteModal.kind) ||
+    deleting.value ||
+    !deleteModal.kind ||
+    !deleteModal.id
+  )
     return;
   deleting.value = true;
   error.value = "";
@@ -3343,9 +3360,7 @@ onUpdated(() => {
         <div class="top-actions">
           <div class="user-pill">
             <strong>{{ currentUser.nama }}</strong>
-            <span>{{
-              currentUser.role === "full" ? "Full Access" : "Read Only"
-            }}</span>
+            <span>{{ roleLabel(currentUser.role) }}</span>
           </div>
           <label class="search">
             <Search :size="17" />
@@ -4678,7 +4693,7 @@ onUpdated(() => {
               <h3 class="yellow-title">Aplikasi dan Relasi Infrastruktur</h3>
             </div>
             <button
-              v-if="canWrite"
+              v-if="canWriteModule('applications')"
               class="action-button"
               type="button"
               @click="openCreate('applications')"
@@ -4748,14 +4763,14 @@ onUpdated(() => {
                         <Printer :size="16" />
                       </button>
                       <button
-                        v-if="canWrite"
+                        v-if="canWriteModule('applications')"
                         class="icon-button"
                         title="Edit aplikasi"
                         @click="openEdit('applications', app)"
                       >
                         <Pencil :size="16" /></button
                       ><button
-                        v-if="canWrite"
+                        v-if="canWriteModule('applications')"
                         class="icon-button"
                         title="Salin aplikasi"
                         @click="openCopy('applications', app)"
@@ -4763,7 +4778,7 @@ onUpdated(() => {
                         <Copy :size="16" />
                       </button>
                       <button
-                        v-if="canWrite"
+                        v-if="canWriteModule('applications')"
                         class="icon-button danger"
                         title="Hapus aplikasi"
                         @click="removeRow('applications', app.id)"
@@ -6567,7 +6582,7 @@ onUpdated(() => {
                   <td>{{ user.email }}</td>
                   <td>
                     <span :class="statusClass(user.role)">{{
-                      user.role === "full" ? "Full" : "Read Only"
+                      roleLabel(user.role, true)
                     }}</span>
                   </td>
                   <td>
@@ -8640,6 +8655,7 @@ onUpdated(() => {
               <select v-model="userForm.role" required>
                 <option value="">Role</option>
                 <option value="full">Full</option>
+                <option value="operator">Operator (hanya ubah Aplikasi)</option>
                 <option value="read_only">Read Only</option>
               </select>
               <select v-model="userForm.status" required>

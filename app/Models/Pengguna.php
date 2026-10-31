@@ -28,6 +28,25 @@ class Pengguna extends Model
         return $this->role === 'full' && $this->status === 'aktif';
     }
 
+    /**
+     * Modul yang boleh ditambah/diubah/dihapus per role (dipakai frontend).
+     * ['*'] = semua modul. Harus sejalan dengan grup route di routes/api.php.
+     */
+    public const WRITABLE_MODULES = [
+        'full' => ['*'],
+        'operator' => ['applications'],
+        'read_only' => [],
+    ];
+
+    public function writableModules(): array
+    {
+        if ($this->status !== 'aktif') {
+            return [];
+        }
+
+        return self::WRITABLE_MODULES[$this->role] ?? [];
+    }
+
     public function opd(): BelongsTo
     {
         return $this->belongsTo(Opd::class, 'opd_id');

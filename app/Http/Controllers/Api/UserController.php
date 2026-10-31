@@ -64,7 +64,7 @@ class UserController extends Controller
             'email' => ['required', 'email', Rule::unique('pengguna', 'email')->ignore($user?->id)],
             'password' => [$user ? 'nullable' : 'required', 'string', 'min:8'],
             'opd_id' => ['nullable', 'uuid', 'exists:opd,id'],
-            'role' => ['required', 'in:full,read_only'],
+            'role' => ['required', 'in:full,read_only,operator'],
             'status' => ['required', 'in:aktif,nonaktif'],
         ]);
     }

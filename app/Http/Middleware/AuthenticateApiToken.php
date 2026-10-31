@@ -10,25 +10,15 @@ class AuthenticateApiToken
 {
     public function handle(Request $request, Closure $next)
     {
-        $token = $request->header('X-API-Key') ?: $request->header('Api-Key');
-
-        if (! $token) {
-            $authorization = trim((string) $request->header('Authorization'));
-
-            if (preg_match('/^(?:Bearer|ApiKey|Api-Key)\s+(.+)$/i', $authorization, $matches)) {
-                $token = $matches[1];
-            } elseif (str_starts_with($authorization, 'iamt_key_')) {
-                // Mendukung Postman API Key dengan key header "Authorization".
-                $token = $authorization;
-            }
-        }
-
+        // Hanya menerima: Authorization: Bearer <token>
+        // (token sesi dari /auth/login atau API key permanen iamt_key_...).
+        $token = $request->bearerToken();
         $token = is_string($token) ? trim($token) : null;
 
         if (! $token) {
             return response()->json([
-                'message' => 'Unauthenticated. Kirim API key melalui header Authorization: Bearer <api-key> atau X-API-Key.',
-            ], 401);
+                'message' => 'Unauthenticated. Kirim token melalui header Authorization: Bearer <token>.',
+            ], 401, ['WWW-Authenticate' => 'Bearer']);
         }
 
         $tokenHash = hash('sha256', $token);
@@ -42,8 +32,8 @@ class AuthenticateApiToken
 
         if (! $user || $user->status !== 'aktif') {
             return response()->json([
-                'message' => 'Unauthenticated. API key tidak valid, sudah dihapus, atau pemilik key tidak aktif.',
-            ], 401);
+                'message' => 'Unauthenticated. Token tidak valid, sudah dihapus, atau pemilik token tidak aktif.',
+            ], 401, ['WWW-Authenticate' => 'Bearer error="invalid_token"']);
         }
 
         $apiKey->forceFill(['last_used_at' => now()])->save();

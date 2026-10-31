@@ -66,7 +66,7 @@ class AuthController extends Controller
             'code' => 200,
             'message' => $isSessionToken
                 ? 'Logout berhasil. Token sudah tidak berlaku.'
-                : 'Logout berhasil. API key permanen yang dipakai tetap aktif.',
+                : 'Logout berhasil. API key permanen tetap aktif; hapus lewat menu API Keys bila ingin mencabutnya.',
             'data' => [
                 'token_type' => $isSessionToken ? 'session' : 'api_key',
                 'token_revoked' => $isSessionToken,

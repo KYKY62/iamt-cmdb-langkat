@@ -1154,8 +1154,18 @@ function formatFileSize(bytes) {
 // Nilai dari API: "2026-10-27 14:30:00" (waktu lokal). Diurai manual supaya
 // tidak bergeser zona waktu. Jam 00:00 dianggap "tanpa jam" (data lama).
 const INSTALLATION_MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
-  "Jul", "Agu", "Sep", "Okt", "Nov", "Des",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "Mei",
+  "Jun",
+  "Jul",
+  "Agu",
+  "Sep",
+  "Okt",
+  "Nov",
+  "Des",
 ];
 
 function parseInstallationDate(value) {
@@ -1252,7 +1262,9 @@ async function viewDocument(path, name = "Dokumen") {
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
       if (response.status === 401) clearAuth();
-      throw new Error(body.message || `Gagal membuka dokumen (${response.status})`);
+      throw new Error(
+        body.message || `Gagal membuka dokumen (${response.status})`,
+      );
     }
 
     const blobUrl = URL.createObjectURL(await response.blob());
@@ -4291,7 +4303,7 @@ onUpdated(() => {
               <h3 class="yellow-title">Server Baremetal</h3>
             </div>
             <button
-              v-if="canWrite"
+              v-if="canWriteModule('servers')"
               class="action-button"
               type="button"
               @click="openCreate('servers')"
@@ -4360,14 +4372,14 @@ onUpdated(() => {
                         <Printer :size="16" />
                       </button>
                       <button
-                        v-if="canWrite"
+                        v-if="canWriteModule('servers')"
                         class="icon-button"
                         title="Edit server"
                         @click="openEdit('servers', server)"
                       >
                         <Pencil :size="16" /></button
                       ><button
-                        v-if="canWrite"
+                        v-if="canWriteModule('servers')"
                         class="icon-button"
                         title="Salin server"
                         @click="openCopy('servers', server)"
@@ -4375,7 +4387,7 @@ onUpdated(() => {
                         <Copy :size="16" />
                       </button>
                       <button
-                        v-if="canWrite"
+                        v-if="canWriteModule('servers')"
                         class="icon-button danger"
                         title="Hapus server"
                         @click="removeRow('servers', server.id)"
@@ -5988,21 +6000,28 @@ onUpdated(() => {
                       <div
                         v-if="
                           row.reported_at &&
-                          installationDuration(row.reported_at, row.installed_at)
+                          installationDuration(
+                            row.reported_at,
+                            row.installed_at,
+                          )
                         "
                         class="install-period-note is-response"
                       >
                         Ditangani dalam
-                        {{ installationDuration(row.reported_at, row.installed_at) }}
+                        {{
+                          installationDuration(
+                            row.reported_at,
+                            row.installed_at,
+                          )
+                        }}
                       </div>
-                      <div
-                        v-if="row.removed_at"
-                        class="install-period-note"
-                      >
+                      <div v-if="row.removed_at" class="install-period-note">
                         Terpakai
                         {{
-                          installationDuration(row.installed_at, row.removed_at) ||
-                          "-"
+                          installationDuration(
+                            row.installed_at,
+                            row.removed_at,
+                          ) || "-"
                         }}
                       </div>
                       <div

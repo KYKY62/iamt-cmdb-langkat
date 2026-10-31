@@ -13,8 +13,15 @@ class Pengguna extends Model
     protected $table = 'pengguna';
 
     protected $fillable = [
-        'nama', 'email', 'password', 'opd_id', 'role_legacy', 'role',
-        'status', 'api_token_hash', 'last_login_at',
+        'nama',
+        'email',
+        'password',
+        'opd_id',
+        'role_legacy',
+        'role',
+        'status',
+        'api_token_hash',
+        'last_login_at',
     ];
 
     protected $hidden = ['password', 'api_token_hash'];
@@ -34,7 +41,7 @@ class Pengguna extends Model
      */
     public const WRITABLE_MODULES = [
         'full' => ['*'],
-        'operator' => ['applications'],
+        'operator' => ['applications', 'servers'],
         'read_only' => [],
     ];
 
